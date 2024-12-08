@@ -12,18 +12,18 @@ import serial
 
 cv_ver = cv.__version__.split(".")[0]
 
-config = configparser.ConfigParser()
+# config = configparser.ConfigParser()
 cur_path = os.path.dirname(os.path.realpath(__file__))
-config.read(os.path.join(cur_path, "config.ini"))
+# config.read(os.path.join(cur_path, "config.ini"))
 
-threshold = list(
-            map(int, config.get('using', 'red_hsv')[1:-1].split(',')))  # red阈值
-threshold1 = list(
-            map(int, config.get('using', 'red2_hsv')[1:-1].split(',')))  # red1阈值
-threshold2 = list(
-            map(int, config.get('using', 'green_hsv')[1:-1].split(',')))  # green阈值
-threshold3 = list(
-            map(int, config.get('using', 'blue_hsv')[1:-1].split(',')))  # blue阈值
+# threshold = list(
+#             map(int, config.get('using', 'red_hsv')[1:-1].split(',')))  # red阈值
+# threshold1 = list(
+#             map(int, config.get('using', 'red2_hsv')[1:-1].split(',')))  # red1阈值
+# threshold2 = list(
+#             map(int, config.get('using', 'green_hsv')[1:-1].split(',')))  # green阈值
+# threshold3 = list(
+#             map(int, config.get('using', 'blue_hsv')[1:-1].split(',')))  # blue阈值
 
 yaml_path = os.path.join(cur_path, "camera_640.yaml")
 with open(yaml_path,"r") as file:
@@ -121,26 +121,41 @@ Flag = True
 # 返回坐标 x y 单位mm， angle 单位0.1度
 def brick_detection(img):
     height, width = img.shape[:2]
-    img2=img[0:height//2,0:width]
+    # img2=img[0:height//2,0:width]
+    img2 = img
 
     hsv_image = cv.cvtColor(img2, cv.COLOR_BGR2HSV)
-    #color_start = b'\x1B\x32'	QR_start = b'\x1B\x31'		cir_start = b'\x1B\x33'	pos_start = b'\x1B\x34'
+    #color_start = b'\x1B\x32'    QR_start = b'\x1B\x31'        cir_start = b'\x1B\x33'    pos_start = b'\x1B\x34'
+    
+    config = configparser.ConfigParser()
+    cur_path = os.path.dirname(os.path.realpath(__file__))
+    config.read(os.path.join(cur_path, "config.ini"))
+
+    threshold = list(
+                map(int, config.get('using', 'red_hsv')[1:-1].split(',')))  # red阈值
+    threshold1 = list(
+                map(int, config.get('using', 'red2_hsv')[1:-1].split(',')))  # red1阈值
+    threshold2 = list(
+                map(int, config.get('using', 'green_hsv')[1:-1].split(',')))  # green阈值
+    threshold3 = list(
+                map(int, config.get('using', 'blue_hsv')[1:-1].split(',')))  # blue阈值
+    
     if response==QR_start: 
-    	up1_ = np.array(threshold[1::2])
-    	lower1_ = np.array(threshold[0::2])
-    	mask1 = cv.inRange(hsv_image, lower1_, up1_)
-    	up2_ = np.array(threshold1[1::2])
-    	lower2_ = np.array(threshold1[0::2])
-    	mask2 = cv.inRange(hsv_image, lower2_, up2_)
-    	mask = cv.bitwise_or(mask1,mask2)
+        up1_ = np.array(threshold[1::2])
+        lower1_ = np.array(threshold[0::2])
+        mask1 = cv.inRange(hsv_image, lower1_, up1_)
+        up2_ = np.array(threshold1[1::2])
+        lower2_ = np.array(threshold1[0::2])
+        mask2 = cv.inRange(hsv_image, lower2_, up2_)
+        mask = cv.bitwise_or(mask1,mask2)
     elif response==color_start:    
-    	up_ = np.array(threshold2[1::2])
-    	lower_ = np.array(threshold2[0::2])
-    	mask = cv.inRange(hsv_image, lower_, up_)
+        up_ = np.array(threshold2[1::2])
+        lower_ = np.array(threshold2[0::2])
+        mask = cv.inRange(hsv_image, lower_, up_)
     elif response==cir_start:     
-    	up_ = np.array(threshold3[1::2])
-    	lower_ = np.array(threshold3[0::2])
-    	mask = cv.inRange(hsv_image, lower_, up_)
+        up_ = np.array(threshold3[1::2])
+        lower_ = np.array(threshold3[0::2])
+        mask = cv.inRange(hsv_image, lower_, up_)
     else:
         mask = cv.inRange(hsv_image, 0, 0)
 
@@ -149,7 +164,7 @@ def brick_detection(img):
     kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE,(5,5))
     morp = cv.morphologyEx(mask, cv.MORPH_OPEN, kernel)
     morp = cv.morphologyEx(morp, cv.MORPH_CLOSE, kernel)
-    cv.imshow("morp", morp)
+    # cv.imshow("morp", morp)
 
     out_x = 0
     out_y = 0
@@ -165,7 +180,7 @@ def brick_detection(img):
     if len(contours) >0:
         for cnt in contours:
             area = cv.contourArea(cnt)
-            if area < 1000:
+            if area < 5000:
                 continue
 
             cv.drawContours(img2, cnt, -1, (0, 255, 0), 3)
@@ -177,7 +192,8 @@ def brick_detection(img):
             lw_ratio = (l / w)
             # print(lw_ratio)
 
-            if True: #if 0.7<= lw_ratio <= 1.3:
+            if True: 
+            # if 0.7<= lw_ratio <= 1.3:
                 box_pst = cv.boxPoints(box)
                 box_pst = np.array(box_pst, dtype="int")
                 cv.drawContours(img2, [box_pst], -1, (0, 0, 255), 2)
@@ -247,7 +263,7 @@ def brick_detection(img):
             # out_angle = -out_angle
             cv.drawContours(img2, [show_box], -1, (255, 0, 255), 2)
             cv.putText(img2, str((out_x, out_y, out_angle, origin_distance)), (0, 20), cv.FONT_HERSHEY_SIMPLEX, 0.4, (0,0,255), 2)           
-        cv.imshow('detection', img2)
+    cv.imshow('detection', img2)
     return ret, (int(out_x), int(out_y), int(out_angle * 10)),mask
 
 
@@ -294,11 +310,11 @@ def main():
             start_time = now_time
             if response == QR_start or response == color_start  or response == cir_start or response == pos_start:
                 ret, brick ,caq= brick_detection(color_img)
-                cv.imshow("op",caq)
+                # cv.imshow("op",caq)
                 if ret:
-                	brick = str(brick).replace(" ", "")
-                	ser.write(brick.encode()+frame_tail)
-#color_start = b'\x1B\x32'	QR_start = b'\x1B\x31'		cir_start = b'\x1B\x33'	pos_start = b'\x1B\x34'
+                    brick = str(brick).replace(" ", "")
+                    ser.write(brick.encode()+frame_tail)
+#color_start = b'\x1B\x32'    QR_start = b'\x1B\x31'        cir_start = b'\x1B\x33'    pos_start = b'\x1B\x34'
         if video_flag:
             out.write(color_img)
 

@@ -4,8 +4,8 @@ camera_name: camera_calibration
 camera_matrix:
   rows: 3
   cols: 3
-  data: [616.34869,   0.     , 320,
-           0.     , 618.16208, 240,
+  data: [616.34869,   0.     , 326.68472,
+           0.     , 618.16208, 254.11559,
            0.     ,   0.     ,   1.     ]
 distortion_model: plumb_bob
 distortion_coefficients:
